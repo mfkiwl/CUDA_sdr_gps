@@ -46,6 +46,27 @@ public:
         return output;
     }
 
+    static std::vector<std::complex<float>> resampleInputSignalToBaseband(
+        const std::vector<std::complex<float>>& inputSignal,
+        float frequencyHz = 0) {
+
+        std::vector<std::complex<float>> baseband(inputSignal.size());
+        size_t n = baseband.size();
+
+        // Modulate with complex exponential carrier
+        for (size_t i = 0; i < n; ++i) {
+            // convert to complex baseband signal
+
+            // 500 Hz carrier frequency over 1 ms at 10 MHz sample rate
+            float carrier_phase = 2.0f * M_PI * frequencyHz * (i / 10000.0f);
+
+            // Apply carrier demodulation
+            baseband[i] = inputSignal[i] * std::complex<float>( cos(carrier_phase) , sin(carrier_phase));
+        }
+
+        return baseband;
+    }
+
     // Convert gold codes to baseband (complex-valued signal)
     static std::vector<std::complex<float>> resampleCaGoldCodeTOneMilisecondOfBaseband(
         const std::vector<int>& goldCode, float frequencyHz = 0) {
@@ -61,7 +82,7 @@ public:
 
             //500 * 2.0f * M_PI * (i / 10000.0f);
             // 500 Hz carrier frequency over 1 ms at 10 MHz sample rate
-            float carrier_phase = 2.0f * M_PI * frequencyHz * (i / 10000.0f);
+            float carrier_phase = 2.0f * M_PI * frequencyHz * ((float)i/10230000);//(i / 10000.0f);
             // float i = cos(carrier_phase);
             // float q = sin(carrier_phase);
 

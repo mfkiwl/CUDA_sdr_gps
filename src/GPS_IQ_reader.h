@@ -64,27 +64,29 @@ public:
         // ensure even number of bytes
         std::size_t samples_read = static_cast<std::size_t>(actually_read) / 2;
         out.reserve(out.size() + samples_read);
+
         for (std::size_t i = 0; i < samples_read; ++i) {
             uint8_t i_b = buf[2 * i];
             uint8_t q_b = buf[2 * i + 1];
-            float fi = (static_cast<int>(i_b) - 128) / 128.0f;
-            float fq = (static_cast<int>(q_b) - 128) / 128.0f;
+            float fi = (static_cast<int8_t>(i_b));
+            float fq = (static_cast<int8_t>(q_b));
             out.emplace_back(fi, fq);
         }
+
         return samples_read;
     }
 
-    // Convenience: read entire file into vector<complex<float>>
-    std::vector<std::complex<float>> readAll() {
-        std::vector<std::complex<float>> out;
-        if (!isOpen()) return out;
-        // read in chunks to avoid large single allocation
-        const std::size_t chunk_samples = 1 << 20; // ~1M samples per chunk
-        while (samplesAvailable() > 0) {
-            readSamples(chunk_samples, out);
-        }
-        return out;
-    }
+    // // Convenience: read entire file into vector<complex<float>>
+    // std::vector<std::complex<float>> readAll() {
+    //     std::vector<std::complex<float>> out;
+    //     if (!isOpen()) return out;
+    //     // read in chunks to avoid large single allocation
+    //     const std::size_t chunk_samples = 1 << 20; // ~1M samples per chunk
+    //     while (samplesAvailable() > 0) {
+    //         readSamples(chunk_samples, out);
+    //     }
+    //     return out;
+    // }
 
     // Seek to sample index (0-based). Throws on failure.
     void seekSample(std::size_t sample_index) {
