@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.14)
 enable_testing()
 
 
-project(MyProjectTest)
+
+project(MyProjectTest LANGUAGES CXX CUDA)
+
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 FetchContent_Declare(

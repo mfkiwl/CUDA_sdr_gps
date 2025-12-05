@@ -8,6 +8,8 @@
 #include "GPS_IQ_reader.h"
 #include "fourier_transform_signal.h"
 #include "get_bits_from_gps_input.h"
+#include "cuda_lib.cuh"
+
 
 // const int SAMPLE_RATE_HZ = 10000000; // 10 MHz sample rate
 const int CHIPS_PER_MS = 10230;
@@ -311,6 +313,21 @@ TEST(GoldCodeTest, autocorelate_wit_real_samples_fft_version)
 //     }
 //     // ASSERT_GT(cross, 8000);
 // }
+
+TEST(CudaAddTest, BasicAddition) {
+    const unsigned int size = 1<<15;
+    int a[size], b[size], c[size];
+    for (unsigned int i = 0; i < size; ++i) {
+        a[i] = i;
+        b[i] = i * 2;
+    }
+
+    add_gpu(a, b, c, size);
+
+    for (unsigned int i = 0; i < size; ++i) {
+        EXPECT_EQ(c[i], a[i] + b[i]);
+    }
+}
 
 
 // Main function to run all tests
