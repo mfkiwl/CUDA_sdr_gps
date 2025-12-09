@@ -314,18 +314,39 @@ TEST(GoldCodeTest, autocorelate_wit_real_samples_fft_version)
 //     // ASSERT_GT(cross, 8000);
 // }
 
-TEST(CudaAddTest, BasicAddition) {
-    const unsigned int size = 1<<15;
-    int a[size], b[size], c[size];
-    for (unsigned int i = 0; i < size; ++i) {
-        a[i] = i;
-        b[i] = i * 2;
-    }
 
-    add_gpu(a, b, c, size);
+TEST(CudaAddTest, ResampleGoldCodeToBaseband) {
+    vector<int> gold_code(1023);
+    CA_generator ca;
+    ca.get_gold_code_sequence(1, gold_code);
 
-    for (unsigned int i = 0; i < size; ++i) {
-        EXPECT_EQ(c[i], a[i] + b[i]);
+
+     auto start = std::chrono::system_clock::now();
+
+    // 2. Perform some operations or wait (for demonstration)
+    BasebandGenerator bg;
+    auto baseband_signal_cpu = bg.resampleCaGoldCodeTOneMilisecondOfBaseband(gold_code, 1000.0f);
+
+
+    // 3. Get the ending time point
+    auto end = std::chrono::system_clock::now();
+
+    // 4. Calculate the difference (results in a duration object)
+    std::chrono::system_clock::duration diff = end - start;
+
+    // For floating-point seconds:
+    std::chrono::duration<double> seconds_double = end - start;
+    // std::cout << "Time difference in seconds (double): " << seconds_double.count() << std::endl;
+    std::cout << "Time difference in seconds (double): " << seconds_double.count() << std::endl;
+
+
+       auto baseband_signal_gpu = resampleCaGoldCodeTOneMilisecondOfBasebandCUDA(gold_code, 1000.0f);
+
+    // ASSERT_EQ(baseband_signal_cpu.size(), baseband_signal_gpu.size());
+
+    for (size_t i = 0; i < baseband_signal_cpu.size(); i++) {
+        EXPECT_NEAR(baseband_signal_cpu[i].real(), baseband_signal_gpu[i].real(), 1e-5);
+        EXPECT_NEAR(baseband_signal_cpu[i].imag(), baseband_signal_gpu[i].imag(), 1e-5);
     }
 }
 
