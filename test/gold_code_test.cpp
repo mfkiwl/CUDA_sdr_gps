@@ -20,7 +20,8 @@ const int CHIPS_PER_MS = 10230;
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/wave_GPS_L1_samp_10.23MHZ_sats_11_12_20_21.dat2";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_157542_sam_1023_sats_5_11_12.dat";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_156542_sam_1023_sats_5_11_12.dat";
-const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data.raw";
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data.raw"; // Working
+const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data.raw";
 
 
 int first_ten_bits_binary_to_int(vector<int> input)
@@ -546,14 +547,18 @@ TEST(CudaGoldCodeTest, findOneSateCUDA)
         // for (freqShiftHz = -5000; freqShiftHz <= 5000; freqShiftHz += 500) {
 
         //     for (lag = 0 ; lag < 10230 ; lag+=3) {
+            for (int samples = 0 ; samples < 3; samples++) {
+                reader.readSamples(10230, iq_samples); // Read 10 ms of IQ samples
 
                 auto cross_cuda_complex = freq_shift_correlateCUDA(goldCode, freqShiftHz , iq_samples,  lag) ;
-                auto cross_cuda = (int)abs(cross_cuda_complex);
-                if (cross_cuda > max_cross) {
-                    max_cross = cross_cuda;
-                    printf( "Sat #%d freqShiftHz:%f Lag:%d Cross:%d\n", i, freqShiftHz, lag, cross_cuda);
-                }
-        //     }
+                iq_samples.clear();
+
+                // auto cross_cuda = (int)abs(cross_cuda_complex);
+                // if (cross_cuda > max_cross) {
+                //     max_cross = cross_cuda;
+                //     printf( "Sat #%d freqShiftHz:%f Lag:%d Cross:%d\n", i, freqShiftHz, lag, cross_cuda);
+                // }
+            }
         // }
     }
 }
@@ -572,7 +577,7 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsCUDA)
     vector<int> goldCode(1023);
     CA_generator ca;
 
-    int satellite_id = 17;
+    int satellite_id = 0;
     ca.get_gold_code_sequence(satellite_id, goldCode);
     float freqShiftHz = 250;
     int lag = 0;//2778;
@@ -611,10 +616,10 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsWithPhaseCUDA)
     vector<int> goldCode(1023);
     CA_generator ca;
 
-    int satellite_id = 17;
+    int satellite_id = 11;
     ca.get_gold_code_sequence(satellite_id, goldCode);
-    float freqShiftHz = 250;
-    int lag = 0;//2778;
+    float freqShiftHz = -4750.000000f;
+    int lag = 484;//2778;
 
     iq_samples.clear();
 
@@ -622,17 +627,17 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsWithPhaseCUDA)
     float phase_offset = 0;
     for (int i = 0;  i < 200 ; i++) {
         // reader.seekSample(0x4000 + i*10230);
-        // auto samples_out_num = reader.readSamples(10230, iq_samples); // Read 10 ms of IQ samples
+        auto samples_out_num = reader.readSamples(10230, iq_samples); // Read 10 ms of IQ samples
 
-        for (int i = 0; i < 10230; i++) {
-            float gc = goldCode[(i/10+123)%1023] == 1 ? 1.0f : -1.0f;
-            // float gc = goldCode[(i/10)%1023] == 1 ? 1.0f : -1.0f;
-            iq_samples.push_back(std::complex<float>(gc* std::cos(phase_offset + 3.14159265f * freqShiftHz * i / 10.23e6f),
-                                                     gc* std::sin(phase_offset + 3.14159265f * freqShiftHz * i / 10.23e6f)));
-                                                    // goldCode[(i/10+123)%1023] * std::sin(2.0f * 3.14159265f * freqShiftHz * i / 10.23e6f)));
-        }
+        // for (int i = 0; i < 10230; i++) {
+        //     float gc = goldCode[(i/10+123)%1023] == 1 ? 1.0f : -1.0f;
+        //     // float gc = goldCode[(i/10)%1023] == 1 ? 1.0f : -1.0f;
+        //     iq_samples.push_back(std::complex<float>(gc* std::cos(phase_offset + 3.14159265f * freqShiftHz * i / 10.23e6f),
+        //                                              gc* std::sin(phase_offset + 3.14159265f * freqShiftHz * i / 10.23e6f)));
+        //                                             // goldCode[(i/10+123)%1023] * std::sin(2.0f * 3.14159265f * freqShiftHz * i / 10.23e6f)));
+        // }
 
-        phase_offset +=  3.14159265f * freqShiftHz;
+        // phase_offset +=  3.14159265f * freqShiftHz;
         auto cross_cuda = freq_shift_correlateCUDA(goldCode, freqShiftHz , iq_samples,  lag) ;
         iq_samples.clear();
         printf("Sample %d: Cross:(%f, %f)\n", i, cross_cuda.real(), cross_cuda.imag());
