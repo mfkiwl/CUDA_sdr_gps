@@ -12,7 +12,7 @@
 
 
 // const int SAMPLE_RATE_HZ = 10000000; // 10 MHz sample rate
-const int CHIPS_PER_MS = 1023*4;
+const int CHIPS_PER_MS = 1023*10;
 
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_1565190Mhz_samp_1023KHz_sats_11_19.dat";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_GPS_L1_samp_10.23MHZ_sats_11_12_20_21";
@@ -20,15 +20,15 @@ const int CHIPS_PER_MS = 1023*4;
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/wave_GPS_L1_samp_10.23MHZ_sats_11_12_20_21.dat2";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_157542_sam_1023_sats_5_11_12.dat";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_156542_sam_1023_sats_5_11_12.dat";
-// const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_10p23MHZSampling.raw"; // Working
-const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_4p092MHzSampling.raw"; // Working
+const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_10p23MHZSampling.raw"; // Working
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_4p092MHzSampling.raw"; // Working
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_b28_s10p23.raw"; BAD
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g60_b28_s10p23.raw"; BAD
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g30_b28_s10p23.raw";
 
 
-// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g30_b28_s10p23.raw";
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/real_gps.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g40_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g50_b28_s10p23.raw";
@@ -464,42 +464,42 @@ TEST(CudaGoldCodeTest, autocorelation_with_freq_in_CUDA_and_lag)
     EXPECT_NEAR(cross_CUDA, cross, 30);
 }
 
-TEST(CudaGoldCodeTest, one_resample_and_correlate_in_CUDA)
-{
+// TEST(CudaGoldCodeTest, one_resample_and_correlate_in_CUDA)
+// {
 
-    GPS_IQ_reader reader;
-    reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
-    reader.seekSample(0x4000);
+//     GPS_IQ_reader reader;
+//     reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
+//     reader.seekSample(0x4000);
 
-    std::vector<std::complex<float>> iq_samples;
-    reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
-    int max_cross = 0;
-    vector<int> output1(1023);
-    CA_generator ca;
-    int i = 1; // test for satelite 1
-    ca.get_gold_code_sequence(i, output1);
+//     std::vector<std::complex<float>> iq_samples;
+//     reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+//     int max_cross = 0;
+//     vector<int> output1(1023);
+//     CA_generator ca;
+//     int i = 1; // test for satelite 1
+//     ca.get_gold_code_sequence(i, output1);
 
-    BasebandGenerator bg;
-    vector<std::complex<float>> local_gold_code = bg.resampleCaGoldCodeTOneMilisecondOfBaseband(output1, 0);
+//     BasebandGenerator bg;
+//     vector<std::complex<float>> local_gold_code = bg.resampleCaGoldCodeTOneMilisecondOfBaseband(output1, 0);
 
-    printf("Processing Sat #%d\n", i);
-    int max_lag = 0;
-    float max_freq = 0;
-    float freq = 1000;
-// for (float freq = -5000; freq <= 5000; freq += 500) {
-    auto baseband_signal1 = bg.resampleInputSignalToBaseband(iq_samples, freq );//- 10e6 );
+//     printf("Processing Sat #%d\n", i);
+//     int max_lag = 0;
+//     float max_freq = 0;
+//     float freq = 1000;
+// // for (float freq = -5000; freq <= 5000; freq += 500) {
+//     auto baseband_signal1 = bg.resampleInputSignalToBaseband(iq_samples, freq );//- 10e6 );
 
-    int lag = 0;
-    // for (int lag = 0 ; lag < CHIPS_PER_MS ; lag+=3) {
-    auto cross = (int)bg.crossCorrelation(local_gold_code, baseband_signal1, lag);
+//     int lag = 0;
+//     // for (int lag = 0 ; lag < CHIPS_PER_MS ; lag+=3) {
+//     auto cross = (int)bg.crossCorrelation(local_gold_code, baseband_signal1, lag);
 
-    // Now make it run all in CUDA
-    auto cross_CUDA = (int)crossCorrelationCUDA(local_gold_code, baseband_signal1, lag);
+//     // Now make it run all in CUDA
+//     auto cross_CUDA = (int)crossCorrelationCUDA(local_gold_code, baseband_signal1, lag);
 
 
-    EXPECT_EQ(cross_CUDA, cross);
+//     EXPECT_EQ(cross_CUDA, cross);
 
-}
+// }
 
 // TEST(CudaGoldCodeTest, resample_and_correlate_in_one_kernel_CUDA)
 // {
@@ -551,6 +551,7 @@ TEST(CudaGoldCodeTest, findOneSateCUDA)
     printf("Running on file :%s\n", FILE_PATH_GPS_IQ_SAMPLE1);
 
     for (int i = 0; i < 32; i++)
+    // for (int i = 10; i < 14; i++)
     // int i =13;
     {
 

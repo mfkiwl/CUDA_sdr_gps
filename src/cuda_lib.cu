@@ -11,18 +11,18 @@
 #include <iostream>
 
 
-// const int SAMPLES_PER_SECOND = 10230000;//4092000; //SAMPLES_PER_MS00;
-const int SAMPLES_PER_SECOND =    4092000; //SAMPLES_PER_MS00;
+const int SAMPLES_PER_SECOND = 10230000;//4092000; //SAMPLES_PER_MS00;
+// const int SAMPLES_PER_SECOND =    4092000; //SAMPLES_PER_MS00;
 
 const int SAMPLES_PER_MS = SAMPLES_PER_SECOND / 1000;
 const int  OUTPUT_SIZE = 2*10230;//2*(BLOCK_SIZE/256);
 const int BLOCK_SIZE = (SAMPLES_PER_MS/256)+1;
-const int SAMPLES_PER_CHIP = 4;
+const int SAMPLES_PER_CHIP = 10;
 
 
 
 // __global__ void gpu_freq_shift_correlate(float* cuda_signalI1, float* cuda_signalQ1, float* cuda_signalI2, float* cuda_signalQ2, float freqShiftHz,int lag)
-__global__ void     gpu_freq_shift_correlate(float phase, float* cuda_signalI1, float* cuda_signalQ1, int* cuda_goldCode, float freqShiftHz,int lag, float *cuda_output)
+__global__ void  gpu_freq_shift_correlate(float phase, float* cuda_signalI1, float* cuda_signalQ1, int* cuda_goldCode, float freqShiftHz,int lag, float *cuda_output)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -245,11 +245,12 @@ std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, f
     float max_freq = 0 ;
     int max_lag = 0 ;
     std::complex<float> max_sum = std::complex<float>(0.0f, 0.0f);
+    float IF = 0;
     for (lag = 0; lag < SAMPLES_PER_MS; lag += 3)
     // lag = 1230;
     {
 
-        for (freqShiftHz = -5000; freqShiftHz <= 5000; freqShiftHz += 250)
+        for (freqShiftHz = IF-5000; freqShiftHz <= IF + 5000; freqShiftHz += 250)
         // freqShiftHz = -250;//3250;
         {
 
