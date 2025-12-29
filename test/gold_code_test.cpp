@@ -12,7 +12,8 @@
 
 
 // const int SAMPLE_RATE_HZ = 10000000; // 10 MHz sample rate
-const int CHIPS_PER_MS = 1023*10;
+const int CHIPS_PER_MS = 25000;//1023*10;
+// const int CHIPS_PER_MS = 1023*10;
 
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_1565190Mhz_samp_1023KHz_sats_11_19.dat";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_GPS_L1_samp_10.23MHZ_sats_11_12_20_21";
@@ -20,7 +21,7 @@ const int CHIPS_PER_MS = 1023*10;
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/wave_GPS_L1_samp_10.23MHZ_sats_11_12_20_21.dat2";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_157542_sam_1023_sats_5_11_12.dat";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_156542_sam_1023_sats_5_11_12.dat";
-const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_10p23MHZSampling.raw"; // Working
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_10p23MHZSampling.raw"; // Working
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_4p092MHzSampling.raw"; // Working
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_b28_s10p23.raw"; BAD
@@ -28,13 +29,13 @@ const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_10p23MHZSam
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g30_b28_s10p23.raw";
 
 
-// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/real_gps.raw";
+const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/skydel_L1_real_gps.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g40_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g50_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g50_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g60_b28_s10p23.raw";
-
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_20MHzSampling.raw"; // Working
 
 int first_ten_bits_binary_to_int(vector<int> input)
 {
@@ -596,8 +597,8 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
 
     int satellite_id =10;//=4;
     ca.get_gold_code_sequence(satellite_id, goldCode);
-    float freqShiftHz = -4750.000000f;// -2750;
-    int lag = 5900;//5184;
+    float freqShiftHz = -2500.000000;// -2750;
+    int lag = 3387;//5184;
 
     iq_samples.clear();
 

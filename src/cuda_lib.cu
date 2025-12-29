@@ -11,13 +11,25 @@
 #include <iostream>
 
 
-const int SAMPLES_PER_SECOND = 10230000;//4092000; //SAMPLES_PER_MS00;
-// const int SAMPLES_PER_SECOND =    4092000; //SAMPLES_PER_MS00;
+// const int SAMPLES_PER_SECOND = 10230000;//4092000; //SAMPLES_PER_MS00;
+// // const int SAMPLES_PER_SECOND =    4092000; //SAMPLES_PER_MS00;
+
+// const int SAMPLES_PER_MS = SAMPLES_PER_SECOND / 1000;
+// const int BLOCK_SIZE = (SAMPLES_PER_MS/256)+1;
+// const int SAMPLES_PER_CHIP = 10;
+// const int SAMPLES_PER_CHIP_FRAC = 1;
+// const int  OUTPUT_SIZE = 2*BLOCK_SIZE; //2*10230;//2*(BLOCK_SIZE/256);
+
+
+
+const int SAMPLES_PER_SECOND = 25000000;//4092000; //SAMPLES_PER_MS00;
 
 const int SAMPLES_PER_MS = SAMPLES_PER_SECOND / 1000;
-const int  OUTPUT_SIZE = 2*10230;//2*(BLOCK_SIZE/256);
 const int BLOCK_SIZE = (SAMPLES_PER_MS/256)+1;
-const int SAMPLES_PER_CHIP = 10;
+const int SAMPLES_PER_CHIP = 25;
+const float SAMPLES_PER_CHIP_FRAC = 1.023;
+const int  OUTPUT_SIZE = 2*BLOCK_SIZE;
+
 
 
 
@@ -29,8 +41,8 @@ __global__ void  gpu_freq_shift_correlate(float phase, float* cuda_signalI1, flo
     __shared__ float shared_dataI[256];
     __shared__ float shared_dataQ[256];
 
-
-    float gold_code = cuda_goldCode[((i+ lag)/SAMPLES_PER_CHIP)%1023] == 1 ? 1.0f : -1.0f;
+    //0..20/1.023
+    float gold_code = cuda_goldCode[((  (int) ((i+ lag)*SAMPLES_PER_CHIP_FRAC))  /SAMPLES_PER_CHIP)%1023] == 1 ? 1.0f : -1.0f;
 
     //  (A * Cos + jA * SIN) * B(cos + j sin) = (A*B * cos - A*B * sin) + j(A*B * sin + A*B * cos)
     float r1 =  gold_code * cosf(phase + 2.0f * M_PI * freqShiftHz * ((float)i/SAMPLES_PER_SECOND));
@@ -183,7 +195,7 @@ std::complex<float> freq_shift_correlateLimitedSearchCUDA(const std::vector<int>
     prev_I_sign = current_I_sign;
     prev_Q_sign = current_Q_sign;
 
-    printf("max cross:%f max freq:%f max lag:%d chips:%d sign_changed:%d\n", max_cross, max_freq, max_lag, max_lag/10, sign_changed );
+    printf("max cross:%f max freq:%f max lag:%d chips:%d sign_changed:%d\n", max_cross, max_freq, max_lag, max_lag/SAMPLES_PER_CHIP, sign_changed );
 
 
     cudaFree(cuda_output);
@@ -215,6 +227,11 @@ std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, f
     cudaMemcpy(cuda_goldCode, arrGoldCode, 1023 * sizeof(int), cudaMemcpyHostToDevice);
 
 
+    // for (int i = 0; i < SAMPLES_PER_MS; i++)
+    //     printf("%d\n", (int)((float)i*SAMPLES_PER_CHIP_FRAC));
+    //     // printf("%d\n", (((i+ lag)*SAMPLES_PER_CHIP_FRAC)/SAMPLES_PER_CHIP)%1023);
+    // exit(1);
+
     float signalI1[SAMPLES_PER_MS];
     float signalQ1[SAMPLES_PER_MS];
 
@@ -245,7 +262,7 @@ std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, f
     float max_freq = 0 ;
     int max_lag = 0 ;
     std::complex<float> max_sum = std::complex<float>(0.0f, 0.0f);
-    float IF = 0;
+    float IF = 0;//10.23e6; // 1.023 MHz * 10
     for (lag = 0; lag < SAMPLES_PER_MS; lag += 3)
     // lag = 1230;
     {
@@ -289,7 +306,7 @@ std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, f
         }
         // printf("\n");/
     }
-    printf("max cross:%f max freq:%f max lag:%d chips:%d\n", max_cross, max_freq, max_lag, max_lag/10);
+    printf("max cross:%f max freq:%f max lag:%d chips:%d\n", max_cross, max_freq, max_lag, max_lag/SAMPLES_PER_CHIP);
     cudaFree(cuda_output);
     cudaFree(cuda_signalI1);
     cudaFree(cuda_signalQ1);
