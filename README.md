@@ -13,9 +13,17 @@ make  <br>
 
 
 ## Test:
+To run the tests:
+Download sample file from: https://etsin.fairdata.fi/dataset/63f8b776-680b-4c98-ace7-d5e443f2b1c5/data
+And set it to FILE_PATH_GPS_IQ_SAMPLE1 variable then run:
+   ./my_test_runner --gtest_filter=*findOneSateCUDA*
+You should see some satelites with same frequency and same lag
+
+
+Also you can generate samples using 3rd party software such as GPS-SDR-SIM.
 If you don't have HackRF to check you can use simulation create GPS IQ samples with GPS-SDR-SIM project. 
 Compile it and run (but what is the fun in that?! We want catch signals from SPACE!):
-./gps-sdr-sim -e brdc0010.22n -o gps_sim_data.raw -s 10230000 -b 8
+   ./gps-sdr-sim -e brdc0010.22n -o gps_sim_data.raw -s 10230000 -b 8
 
 
 ## Troubleshuting:

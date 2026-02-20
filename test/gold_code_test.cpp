@@ -11,8 +11,9 @@
 #include "cuda_lib.cuh"
 
 
-// const int SAMPLE_RATE_HZ = 10000000; // 10 MHz sample rate
-const int CHIPS_PER_MS = 25000;//1023*10;
+const int CHIPS_PER_MS = 25000;
+
+
 // const int CHIPS_PER_MS = 1023*10;
 
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../test_data/wave_1565190Mhz_samp_1023KHz_sats_11_19.dat";
@@ -28,11 +29,15 @@ const int CHIPS_PER_MS = 25000;//1023*10;
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g60_b28_s10p23.raw"; BAD
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g30_b28_s10p23.raw";
 
+// File downloaded from https://etsin.fairdata.fi/dataset/63f8b776-680b-4c98-ace7-d5e443f2b1c5/data
+const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/skydel_L1_real_gps.raw"; // Working!
+// const char*     FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data_clean_575MHz_Sine_10MHZSampling_Band5MHZ.raw";// No Signal how it possible ;)
+// const char*     FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data_clean_949MHz_Sine_10MHZSampling_Band5MHZ.raw";// No Signal how it possible ;)
+// const char*     FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/data_clean_950MHzplus1KHz_Sine_10MHZSampling_Band5MHZ.raw";// No Signal how it possible ;)
 
-const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/skydel_L1_real_gps.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g40_b28_s10p23.raw";
-// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_b28_s10p23.raw";
-// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g50_b28_s10p23.raw";
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l32_g40_s20MHz_L1.raw";
+// const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l24_g40_s10p23_L1.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g50_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 =  "../../test_data/data_p1_a1_l40_g60_b28_s10p23.raw";
 // const char* FILE_PATH_GPS_IQ_SAMPLE1 = "../../test_data/gps_sim_data_20MHzSampling.raw"; // Working
@@ -541,7 +546,7 @@ TEST(CudaGoldCodeTest, findOneSateCUDA)
 
     GPS_IQ_reader reader;
     reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
-    reader.seekSample(0x4000);
+    reader.seekSample(45000);
 
     std::vector<std::complex<float>> iq_samples;
     reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
@@ -567,6 +572,22 @@ TEST(CudaGoldCodeTest, findOneSateCUDA)
         //     for (lag = 0 ; lag < CHIPS_PER_MS ; lag+=3) {
             for (int samples = 0 ; samples < 3; samples++) {
                 reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+
+                 // go over the entire signal and add average to remove HackRF DC spike
+                static float avgI = 0.0f;
+                static float avgQ = 0.0f;
+
+                for (size_t idx = 0; idx < iq_samples.size(); idx++) {
+                    avgI += iq_samples[idx].real();
+                    avgQ += iq_samples[idx].imag();
+                }
+
+                avgI /= iq_samples.size();
+                avgQ /= iq_samples.size();
+
+                for (size_t idx = 0; idx < iq_samples.size(); idx++) {
+                    iq_samples[idx] -= std::complex<float>(avgI, avgQ);
+                }
 
                 auto cross_cuda_complex = freq_shift_correlateCUDA(goldCode, freqShiftHz , iq_samples,  lag) ;
                 iq_samples.clear();

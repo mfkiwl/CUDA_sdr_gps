@@ -48,6 +48,7 @@ __global__ void  gpu_freq_shift_correlate(float phase, float* cuda_signalI1, flo
     float r1 =  gold_code * cosf(phase + 2.0f * M_PI * freqShiftHz * ((float)i/SAMPLES_PER_SECOND));
     float i1 = -1*gold_code * sinf(phase + 2.0f * M_PI * freqShiftHz * ((float)i/SAMPLES_PER_SECOND));
 
+
     float real1 = cuda_signalI1[i] * r1 - cuda_signalQ1[i] * i1;
     // imag1 = cuda_signalQ1[i] * real1 + cuda_signalI1[i] * imag1;
     // imag1 = gold_code * cosf(2.0f * M_PI * freqShiftHz * ((float)i/SAMPLES_PER_SECOND)) * imag1 ;// - gold_code * sinf(-2.0f * M_PI * freqShiftHz * ((float)i/SAMPLES_PER_SECOND)) * real1;
