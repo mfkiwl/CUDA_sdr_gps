@@ -19,6 +19,9 @@ And set it to FILE_PATH_GPS_IQ_SAMPLE1 variable then run:
    ./my_test_runner --gtest_filter=*findOneSateCUDA*
 You should see some satelites with same frequency and same lag
 
+Choose the satelite frequency and lag and run:
+./my_test_runner --gtest_filter=*runOneSateMultipleChipsLimitedSearchCUDA*
+This will give the acctual bits of satelite
 
 Also you can generate samples using 3rd party software such as GPS-SDR-SIM.
 If you don't have HackRF to check you can use simulation create GPS IQ samples with GPS-SDR-SIM project. 

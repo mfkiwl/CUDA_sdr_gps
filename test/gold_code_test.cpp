@@ -151,7 +151,7 @@ void run_one_sateliate_in_thread(int i, std::vector<std::complex<float>> iq_samp
 
         // printf("\n");
     }
-    printf("MAX: Sat #%d Lag:%d Cross:%d freq:%f\n", i, max_lag, max_cross, max_freq);
+    // printf("MAX: Sat #%d Lag:%d Cross:%d freq:%f\n", i, max_lag, max_cross, max_freq);
 
 }
 #if 0
@@ -604,6 +604,78 @@ TEST(CudaGoldCodeTest, findOneSateCUDA)
 
 
 
+
+TEST(CudaGoldCodeTest, findOneSate20miliApartCUDA)
+{
+
+    GPS_IQ_reader reader;
+    reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
+    reader.seekSample(45000);
+
+    std::vector<std::complex<float>> iq_samples;
+    reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+    int max_cross = 0;
+    vector<int> goldCode(1023);
+    CA_generator ca;
+
+    printf("Running on file :%s\n", FILE_PATH_GPS_IQ_SAMPLE1);
+
+    // for (int i = 0; i < 32; i++)
+    int i = 28;
+    // for (int i = 10; i < 14; i++)
+    // int i =13;
+    while(1){
+
+        // int i = 4; // test for satelite 1
+        ca.get_gold_code_sequence(i, goldCode);
+        float freqShiftHz = 0;//1000;
+        int lag = 0;
+
+        printf("Processing Sat #%d\n", i);
+        // for (freqShiftHz = -5000; freqShiftHz <= 5000; freqShiftHz += 500) {
+
+        //     for (lag = 0 ; lag < CHIPS_PER_MS ; lag+=3) {
+            for (int samples = 0 ; samples < 1; samples++) {
+                reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 1 ms of IQ samples
+
+
+                 // go over the entire signal and add average to remove HackRF DC spike
+                static float avgI = 0.0f;
+                static float avgQ = 0.0f;
+
+                for (size_t idx = 0; idx < iq_samples.size(); idx++) {
+                    avgI += iq_samples[idx].real();
+                    avgQ += iq_samples[idx].imag();
+                }
+
+                avgI /= iq_samples.size();
+                avgQ /= iq_samples.size();
+
+                for (size_t idx = 0; idx < iq_samples.size(); idx++) {
+                    iq_samples[idx] -= std::complex<float>(avgI, avgQ);
+                }
+
+                auto cross_cuda_complex = freq_shift_correlateCUDA(goldCode, freqShiftHz , iq_samples,  lag) ;
+
+                 for (int j = 0; j < 19; j++) {
+                    reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+                }
+
+                iq_samples.clear();
+
+                // auto cross_cuda = (int)abs(cross_cuda_complex);
+                // if (cross_cuda > max_cross) {
+                //     max_cross = cross_cuda;
+                //     printf( "Sat #%d freqShiftHz:%f Lag:%d Cross:%d\n", i, freqShiftHz, lag, cross_cuda);
+                // }
+            }
+        // }
+    }
+}
+
+
+
+
 TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
 {
 
@@ -616,17 +688,17 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
     vector<int> goldCode(1023);
     CA_generator ca;
 
-    int satellite_id =10;//=4;
+    int satellite_id =28;//19;//10;//=4;
     ca.get_gold_code_sequence(satellite_id, goldCode);
-    float freqShiftHz = -2500.000000;// -2750;
-    int lag = 3387;//5184;
+    float freqShiftHz = 750;//1250;//-2500.000000;// -2750;
+    int lag = 8109;//16230;//3387;//5184;
 
     iq_samples.clear();
 
     printf("Processing Sat #%d\n", satellite_id);
     for (int i = 0;  i < 2000 ; i++) {
         // reader.seekSample(0x4000 + i*CHIPS_PER_MS);
-        auto samples_out_num = reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+        auto samples_out_num = reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 1 ms of IQ samples
 
         // for (int i = 0; i < CHIPS_PER_MS; i++) {
         //     float gc = goldCode[(i/10+123)%1023] == 1 ? 1.0f : -1.0f;
@@ -638,7 +710,7 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
 
         auto cross_cuda = freq_shift_correlateLimitedSearchCUDA(goldCode, freqShiftHz , iq_samples,  lag, i) ;
         iq_samples.clear();
-        printf("Sample %d: Cross:(%f, %f) ", i, cross_cuda.real(), cross_cuda.imag());
+        // printf("Sample %d: Cross:(%f, %f) ", i, cross_cuda.real(), cross_cuda.imag());
     }
 
 }
