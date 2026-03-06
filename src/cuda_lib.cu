@@ -95,7 +95,7 @@ __global__ void  gpu_freq_shift_correlate(float phase, float* cuda_signalI1, flo
 }
 
 
-std::complex<float> freq_shift_correlateLimitedSearchCUDA(const std::vector<int>& goldCode, float freqShiftHz , const std::vector<std::complex<float>>& inputSignal, int limitedLag, int bench)
+std::complex<float> freq_shift_correlateLimitedSearchCUDA(const std::vector<int>& goldCode, float freqShiftHz , const std::vector<std::complex<float>>& inputSignal, int limitedLag, int bench, int should_update)
 {
     int arrGoldCode[1023];
     float output[OUTPUT_SIZE];
@@ -192,22 +192,23 @@ std::complex<float> freq_shift_correlateLimitedSearchCUDA(const std::vector<int>
         // printf("\n");/
     }
 
-    int current_I_sign = (max_sum.real() >= 0) ? 1 : -1;
-    int current_Q_sign = (max_sum.imag() >= 0) ? 1 : -1;
-    bool sign_changed = (prev_I_sign != current_I_sign) && (prev_Q_sign != current_Q_sign );
-    if (sign_changed) {
-        priv_bit = 1 - priv_bit; // Toggle between 0 and 1
-    }
-    prev_I_sign = current_I_sign;
-    prev_Q_sign = current_Q_sign;
+    if (should_update) {
+        int current_I_sign = (max_sum.real() >= 0) ? 1 : -1;
+        int current_Q_sign = (max_sum.imag() >= 0) ? 1 : -1;
+        bool sign_changed = (prev_I_sign != current_I_sign) && (prev_Q_sign != current_Q_sign );
+        if (sign_changed) {
+            priv_bit = 1 - priv_bit; // Toggle between 0 and 1
+        }
+        prev_I_sign = current_I_sign;
+        prev_Q_sign = current_Q_sign;
 
-    bit_count++;
-    if (bit_count % 20 == 0) {
-        printf("|");
+        bit_count++;
+        if (bit_count % 20 == 0) {
+            printf("|");
+        }
+        // printf("%c", (priv_bit == 0) ? '.' : '_');
+        printf("max cross:%f max freq:%f max lag:%d chips:%d sign_changed:%d\n", max_cross, max_freq, max_lag, max_lag/SAMPLES_PER_CHIP, sign_changed );
     }
-    printf("%c", (priv_bit == 0) ? '.' : '_');
-    // printf("max cross:%f max freq:%f max lag:%d chips:%d sign_changed:%d\n", max_cross, max_freq, max_lag, max_lag/SAMPLES_PER_CHIP, sign_changed );
-
 
     cudaFree(cuda_output);
     cudaFree(cuda_signalI1);
@@ -645,7 +646,7 @@ void print_cuda_props() {
     //     cudaDeviceProp prop;
     //     cudaGetDeviceProperties(&prop, dev);
 
-    //     int cores = coresPerSM(prop.major, prop.minor) * prop.multiProcessorCount;
+    //     int cores = coresPerSM(prop.major, prop.mfreq_shift_correlateLimitedSearchCUDAinor) * prop.multiProcessorCount;
     //     printf("Device %d: \"%s\"\n", dev, prop.name);
     //     printf("  Compute Capability: %d.%d\n", prop.major, prop.minor);
     //     printf("  Multiprocessors (SMs): %d\n", prop.multiProcessorCount);

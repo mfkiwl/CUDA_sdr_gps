@@ -540,6 +540,57 @@ TEST(CudaGoldCodeTest, autocorelation_with_freq_in_CUDA_and_lag)
 
 // }
 
+typedef struct satellite_detection_result {
+    int satellite_id;
+    int lag;
+    float frequency_shift_hz;
+    int cross_correlation_abs_value;
+    complex<float> cross_correlation_complex_value;
+} stallite_detection_result_t;
+
+stallite_detection_result_t find_satellite_in_signal(int satellite_id, const std::vector<std::complex<float>>& iq_samples) {
+    stallite_detection_result_t result;
+    result.satellite_id = satellite_id;
+
+    vector<int> goldCode(1023);
+    CA_generator ca;
+    ca.get_gold_code_sequence(satellite_id, goldCode);
+    float freqShiftHz = 0;
+    int lag = 0;
+
+    BasebandGenerator bg;
+    auto local_gold_code = bg.resampleCaGoldCodeTOneMilisecondOfBaseband(goldCode, freqShiftHz);
+
+    auto cross_cuda_complex = freq_shift_correlateCUDA(goldCode, freqShiftHz , iq_samples,  lag) ;
+    result.cross_correlation_complex_value = cross_cuda_complex;
+    result.cross_correlation_abs_value = (int)abs(cross_cuda_complex);
+    result.lag = lag;
+    result.frequency_shift_hz = freqShiftHz;
+
+    return result;
+}
+
+
+
+TEST(CudaGoldCodeTest, findOneSateCUDA2)
+{
+
+    GPS_IQ_reader reader;
+    reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
+    reader.seekSample(45000);
+
+    std::vector<std::complex<float>> iq_samples;
+    reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+
+    int satellite_id = 28; // test for satelite 1
+    auto result = find_satellite_in_signal(satellite_id, iq_samples);
+
+    printf("Sat #%d Lag:%d Cross:%d freq:%f\n", result.satellite_id, result.lag, result.cross_correlation_abs_value, result.frequency_shift_hz);
+
+    // ASSERT_GT(result.cross_correlation_abs_value, 800);
+}
+
+
 
 TEST(CudaGoldCodeTest, findOneSateCUDA)
 {
@@ -690,7 +741,7 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
 
     int satellite_id =28;//19;//10;//=4;
     ca.get_gold_code_sequence(satellite_id, goldCode);
-    float freqShiftHz = 750;//1250;//-2500.000000;// -2750;
+    float freqShiftHz = 1000;//1250;//-2500.000000;// -2750;
     int lag = 8109;//16230;//3387;//5184;
 
     iq_samples.clear();
@@ -715,6 +766,55 @@ TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDA)
 
 }
 
+
+TEST(CudaGoldCodeTest, runOneSateMultipleChipsLimitedSearchCUDAWithLagAutoUpdate)
+{
+
+    GPS_IQ_reader reader;
+    reader.open(FILE_PATH_GPS_IQ_SAMPLE1);
+    reader.seekSample(0x4000);
+
+    std::vector<std::complex<float>> iq_samples;
+    int max_cross = 0;
+    vector<int> goldCode(1023);
+    CA_generator ca;
+
+    int satellite_id =28;//19;//10;//=4;
+    ca.get_gold_code_sequence(satellite_id, goldCode);
+    float freqShiftHz = 1000;//1250;//-2500.000000;// -2750;
+    int lag = 8109;//16230;//3387;//5184;
+
+    iq_samples.clear();
+
+    printf("Processing Sat #%d\n", satellite_id);
+    for (int i = 0;  i < 2000 ; i++) {
+        // reader.seekSample(0x4000 + i*CHIPS_PER_MS);
+        auto samples_out_num = reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 1 ms of IQ samples
+
+        // for (int i = 0; i < CHIPS_PER_MS; i++) {
+        //     float gc = goldCode[(i/10+123)%1023] == 1 ? 1.0f : -1.0f;
+        //     // float gc = goldCode[(i/10)%1023] == 1 ? 1.0f : -1.0f;
+        //     iq_samples.push_back(std::complex<float>(gc* std::cos(2.0f * 3.14159265f * freqShiftHz * i / 10.23e6f),
+        //                                              gc* std::sin(2.0f * 3.14159265f * freqShiftHz * i / 10.23e6f)));
+        //                                             // goldCode[(i/10+123)%1023] * std::sin(2.0f * 3.14159265f * freqShiftHz * i / 10.23e6f)));
+        // }
+
+        auto cross_cudaMinus = freq_shift_correlateLimitedSearchCUDA(goldCode, freqShiftHz , iq_samples,  lag -3 , i) ;
+        auto cross_cuda = freq_shift_correlateLimitedSearchCUDA(goldCode, freqShiftHz , iq_samples,  lag, i, 1) ;
+        auto cross_cudaPlus = freq_shift_correlateLimitedSearchCUDA(goldCode, freqShiftHz , iq_samples,  lag +3, i) ;
+
+        if (std::abs(cross_cudaMinus) > std::abs(cross_cuda)) {
+            lag -= 3;
+            cross_cuda = cross_cudaMinus;
+        } else if (std::abs(cross_cudaPlus) > std::abs(cross_cuda)) {
+            lag += 3;
+            cross_cuda = cross_cudaPlus;
+        }
+        iq_samples.clear();
+        // printf("Sample %d: Cross:(%f, %f) ", i, cross_cuda.real(), cross_cuda.imag());
+    }
+
+}
 
 // Main function to run all tests
 int main(int argc, char **argv)
