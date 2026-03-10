@@ -548,7 +548,7 @@ typedef struct satellite_detection_result {
     complex<float> cross_correlation_complex_value;
 } stallite_detection_result_t;
 
-stallite_detection_result_t find_satellite_in_signal(int satellite_id, const std::vector<std::complex<float>>& iq_samples) {
+stallite_detection_result_t find_satellite_from_signal(int satellite_id, const std::vector<std::complex<float>>& iq_samples) {
     stallite_detection_result_t result;
     result.satellite_id = satellite_id;
 
@@ -581,9 +581,16 @@ TEST(CudaGoldCodeTest, findOneSateCUDA2)
 
     std::vector<std::complex<float>> iq_samples;
     reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
-
+    satellite_detection_result result;
     int satellite_id = 28; // test for satelite 1
-    auto result = find_satellite_in_signal(satellite_id, iq_samples);
+    for (int i = 0; i < 100; i++) {
+        reader.readSamples(CHIPS_PER_MS, iq_samples); // Read 10 ms of IQ samples
+        result = find_satellite_from_signal(satellite_id, iq_samples);
+
+        reader.seekSample(45000+ 100*(i+1)*CHIPS_PER_MS); // Skip 20 ms of samples
+        iq_samples.clear();
+
+    }
 
     printf("Sat #%d Lag:%d Cross:%d freq:%f\n", result.satellite_id, result.lag, result.cross_correlation_abs_value, result.frequency_shift_hz);
 

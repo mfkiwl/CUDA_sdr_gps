@@ -222,7 +222,7 @@ std::complex<float> freq_shift_correlateLimitedSearchCUDA(const std::vector<int>
 
 
 // Convert gold codes to baseband (complex-valued signal)
-std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, float freqShiftHz , const std::vector<std::complex<float>>& inputSignal, int lag) {
+std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, float &freqShiftHz , const std::vector<std::complex<float>>& inputSignal, int &lag) {
 
 
     int arrGoldCode[1023];
@@ -323,6 +323,9 @@ std::complex<float> freq_shift_correlateCUDA(const std::vector<int>& goldCode, f
     cudaFree(cuda_signalI1);
     cudaFree(cuda_signalQ1);
     cudaFree(cuda_goldCode);
+
+    lag = max_lag;
+    freqShiftHz = max_freq;
 
     return max_sum;// (int)realSum;
 
